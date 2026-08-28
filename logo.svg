@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 260" width="1120" height="260" role="img" aria-label="TrinketText logo">
+  <defs>
+    <radialGradient id="l-bg" cx="38%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#241a0c"/>
+      <stop offset="55%" stop-color="#140f08"/>
+      <stop offset="100%" stop-color="#080706"/>
+    </radialGradient>
+    <linearGradient id="l-gem" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9a8"/>
+      <stop offset="45%" stop-color="#f6c34a"/>
+      <stop offset="100%" stop-color="#b9791d"/>
+    </linearGradient>
+    <linearGradient id="l-shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff7df"/>
+      <stop offset="100%" stop-color="#ffe6a6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- icon -->
+  <g transform="translate(16 14) scale(0.9)">
+    <rect x="8" y="8" width="240" height="240" rx="46" fill="url(#l-bg)" stroke="#d9a743" stroke-width="6"/>
+    <rect x="20" y="20" width="216" height="216" rx="36" fill="none" stroke="#3a2c14" stroke-width="2"/>
+    <circle cx="128" cy="130" r="84" fill="none" stroke="#4a3a1c" stroke-width="14"/>
+    <path d="M 128 46 A 84 84 0 1 1 61 163" fill="none" stroke="#ffcb52" stroke-width="14" stroke-linecap="round"/>
+    <polygon points="128,72 178,130 128,192 78,130" fill="url(#l-gem)" stroke="#7a4d12" stroke-width="3"/>
+    <polygon points="128,72 153,130 128,192 103,130" fill="#00000022"/>
+    <polygon points="128,72 103,130 78,130" fill="url(#l-shine)" opacity="0.9"/>
+    <line x1="78" y1="130" x2="178" y2="130" stroke="#7a4d12" stroke-width="2"/>
+    <line x1="103" y1="130" x2="128" y2="72" stroke="#7a4d12" stroke-width="2"/>
+    <line x1="153" y1="130" x2="128" y2="72" stroke="#7a4d12" stroke-width="2"/>
+    <g transform="translate(196 58)">
+      <path d="M0 -20 L5 -5 L20 0 L5 5 L0 20 L-5 5 L-20 0 L-5 -5 Z" fill="#fff2c2"/>
+      <circle cx="0" cy="0" r="4" fill="#ffffff"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <g font-family="'Trebuchet MS','Segoe UI',system-ui,sans-serif">
+    <text x="270" y="138" font-size="92" font-weight="800" letter-spacing="1">
+      <tspan fill="#f6c34a">Trinket</tspan><tspan fill="#f4e4c1" font-weight="400">Text</tspan>
+    </text>
+    <text x="272" y="188" font-size="27" fill="#b9a87e" letter-spacing="2.5">
+      ON-SCREEN ALERT WHEN YOUR TRINKET IS READY
+    </text>
+  </g>
+</svg>
