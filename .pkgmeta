@@ -1,0 +1,18 @@
+# CurseForge / BigWigs packager metadata — https://github.com/BigWigsMods/packager
+package-as: TrinketText
+
+enable-nolib-creation: no
+
+# Files kept in the repo but excluded from the packaged release zip.
+ignore:
+  - .git
+  - .github
+  - .gitignore
+  - .pkgmeta
+  - icon.svg
+  - logo.svg
+  - logo.png
+  - icon-128.png
+  - icon-256.png
+  - icon-512.png
+  - pasted file.png

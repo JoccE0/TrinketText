@@ -1,0 +1,7 @@
+# macOS / editor cruft
+.DS_Store
+*.swp
+*~
+
+# WoW writes this next to the addon on some setups
+Bindings.xml.bak
