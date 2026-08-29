@@ -81,15 +81,15 @@ frame:SetScript("OnDragStop", function(self)
 	db.pos = { point = point, relPoint = relPoint, x = x, y = y }
 end)
 
--- fade in -> hold -> fade out
-local ag       = frame:CreateAnimationGroup()
-local fadeIn   = ag:CreateAnimation("Alpha")
-fadeIn:SetOrder(1); fadeIn:SetDuration(0.15); fadeIn:SetFromAlpha(0); fadeIn:SetToAlpha(1)
-local hold     = ag:CreateAnimation("Alpha")
-hold:SetOrder(2); hold:SetDuration(DEFAULTS.time); hold:SetFromAlpha(1); hold:SetToAlpha(1)
-local fadeOut  = ag:CreateAnimation("Alpha")
-fadeOut:SetOrder(3); fadeOut:SetDuration(0.5); fadeOut:SetFromAlpha(1); fadeOut:SetToAlpha(0)
-ag:SetScript("OnFinished", function() frame:Hide() end)
+local FADE_IN, FADE_OUT = 0.15, 0.4
+local hideTimer     -- C_Timer handle for the "hold" phase
+local permShown = false   -- permanent-mode text currently on screen
+
+-- stop any in-flight fade / pending hide
+local function StopFX()
+	if hideTimer then hideTimer:Cancel(); hideTimer = nil end
+	if UIFrameFadeRemoveFrame then UIFrameFadeRemoveFrame(frame) end
+end
 
 local function ApplySettings()
 	fs:SetFont(STANDARD_TEXT_FONT, db.size, "OUTLINE")
@@ -104,19 +104,24 @@ end
 
 local function ShowMessage(text)
 	if unlocked then return end
-	ag:Stop()
+	StopFX()
 	fs:SetText(text)
-	hold:SetDuration(db.time)
-	frame:SetAlpha(0)
 	frame:Show()
-	ag:Play()
+	UIFrameFadeIn(frame, FADE_IN, frame:GetAlpha(), 1)
+	hideTimer = C_Timer.NewTimer(db.time, function()
+		hideTimer = nil
+		if unlocked or permShown then return end
+		UIFrameFadeOut(frame, FADE_OUT, frame:GetAlpha(), 0)
+		C_Timer.After(FADE_OUT + 0.05, function()
+			if not unlocked and not permShown then frame:Hide() end
+		end)
+	end)
 end
 
 -- permanent mode: text stays up untimed until told to hide
-local permShown = false
 local function ShowPermanent(text)
 	if unlocked then return end
-	ag:Stop()
+	StopFX()
 	if fs:GetText() ~= text then fs:SetText(text) end
 	frame:SetAlpha(1)
 	if not frame:IsShown() then frame:Show() end
@@ -125,7 +130,7 @@ end
 
 local function HidePermanent()
 	if permShown and not unlocked then
-		ag:Stop()
+		StopFX()
 		frame:Hide()
 		permShown = false
 	end
@@ -133,7 +138,8 @@ end
 
 local function SetUnlocked(on)
 	unlocked = on and true or false
-	ag:Stop()
+	StopFX()
+	permShown = false
 	frame:EnableMouse(unlocked)
 	if unlocked then
 		bg:Show()
