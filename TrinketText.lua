@@ -62,20 +62,13 @@ local function GetTrinketIcon(itemID)
 	return tex
 end
 
--- Inline icon for a trinket, sized to the current font so it sits on the text
--- line. Kept to the plain :h:w form -- the crop form needs the texture's real
--- pixel size (256 on retail) or it scales the icon up several times over.
--- Returns "" when icons are off or no texture is available.
-local function IconMarkup(itemID)
-	if not db.icon then return "" end
-	local tex = itemID and GetTrinketIcon(itemID)
-	if not tex then return "" end
-	local h = math.floor(db.size + 0.5)
-	return ("|T%s:%d:%d|t "):format(tostring(tex), h, h)
-end
-
 -- =========================================================================
 --  Display frame
+--
+--  The message is drawn as up to two stacked rows, one per ready trinket.
+--  Each row is [icon][text]; the icon is a real Texture with an explicit
+--  SetSize (inline |T| markup scales unpredictably with the icon file's
+--  native resolution, so it is not used).
 -- =========================================================================
 local frame = CreateFrame("Frame", "TrinketTextFrame", UIParent)
 frame:SetSize(420, 60)
@@ -91,9 +84,19 @@ bg:SetAllPoints()
 bg:SetColorTexture(0, 0, 0, 0.45)
 bg:Hide()
 
-local fs = frame:CreateFontString(nil, "OVERLAY")
-fs:SetPoint("CENTER")
-fs:SetJustifyH("CENTER")   -- keep both lines centred when two trinkets pop together
+local ICON_GAP = 6
+local rows = {}
+for i = 1, 2 do
+	local r = CreateFrame("Frame", nil, frame)
+	r.icon = r:CreateTexture(nil, "OVERLAY")
+	r.icon:SetPoint("LEFT", r, "LEFT", 0, 0)
+	r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)   -- trim the stock icon border
+	r.icon:Hide()
+	r.text = r:CreateFontString(nil, "OVERLAY")
+	r.text:SetPoint("LEFT", r, "LEFT", 0, 0)
+	r:Hide()
+	rows[i] = r
+end
 
 frame:SetScript("OnDragStart", function(self)
 	if unlocked then self:StartMoving() end
@@ -107,6 +110,7 @@ end)
 local FADE_IN, FADE_OUT = 0.15, 0.4
 local hideTimer     -- C_Timer handle for the "hold" phase
 local permShown = false   -- permanent-mode text currently on screen
+local permSig            -- signature of what permanent mode last drew
 
 -- stop any in-flight fade / pending hide
 local function StopFX()
@@ -115,8 +119,11 @@ local function StopFX()
 end
 
 local function ApplySettings()
-	fs:SetFont(STANDARD_TEXT_FONT, db.size, "OUTLINE")
-	fs:SetTextColor(db.color.r, db.color.g, db.color.b)
+	for _, r in ipairs(rows) do
+		r.text:SetFont(STANDARD_TEXT_FONT, db.size, "OUTLINE")
+		r.text:SetTextColor(db.color.r, db.color.g, db.color.b)
+	end
+	frame:SetHeight(math.max(60, db.size * 2 + 16))
 	frame:ClearAllPoints()
 	if db.pos then
 		frame:SetPoint(db.pos.point, UIParent, db.pos.relPoint, db.pos.x, db.pos.y)
@@ -125,10 +132,47 @@ local function ApplySettings()
 	end
 end
 
-local function ShowMessage(text)
+-- items: array (max 2) of { text = string, icon = fileID|nil }
+local function SetContent(items)
+	local n = math.min(#items, #rows)
+	for i = 1, #rows do
+		local r = rows[i]
+		local it = items[i]
+		if it then
+			r.text:SetText(it.text)
+			r.text:ClearAllPoints()
+			if db.icon and it.icon then
+				r.icon:SetTexture(it.icon)
+				r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)   -- SetTexture can reset these
+				r.icon:SetSize(db.size, db.size)
+				r.icon:Show()
+				r.text:SetPoint("LEFT", r.icon, "RIGHT", ICON_GAP, 0)
+				r:SetSize(db.size + ICON_GAP + r.text:GetStringWidth(), db.size)
+			else
+				r.icon:Hide()
+				r.text:SetPoint("LEFT", r, "LEFT", 0, 0)
+				r:SetSize(math.max(1, r.text:GetStringWidth()), db.size)
+			end
+			r:Show()
+		else
+			r:Hide()
+		end
+	end
+
+	rows[1]:ClearAllPoints()
+	rows[2]:ClearAllPoints()
+	if n <= 1 then
+		rows[1]:SetPoint("CENTER", frame, "CENTER", 0, 0)
+	else
+		rows[1]:SetPoint("BOTTOM", frame, "CENTER", 0, 3)
+		rows[2]:SetPoint("TOP", frame, "CENTER", 0, -3)
+	end
+end
+
+local function ShowMessage(items)
 	if unlocked then return end
 	StopFX()
-	fs:SetText(text)
+	SetContent(items)
 	frame:Show()
 	UIFrameFadeIn(frame, FADE_IN, frame:GetAlpha(), 1)
 	hideTimer = C_Timer.NewTimer(db.time, function()
@@ -141,11 +185,23 @@ local function ShowMessage(text)
 	end)
 end
 
--- permanent mode: text stays up untimed until told to hide
-local function ShowPermanent(text)
+local function ItemsSig(items)
+	local t = { tostring(db.icon) }
+	for _, it in ipairs(items) do
+		t[#t + 1] = tostring(it.icon or "") .. "\30" .. it.text
+	end
+	return table.concat(t, "\29")
+end
+
+-- permanent mode: content stays up untimed until told to hide
+local function ShowPermanent(items)
 	if unlocked then return end
 	StopFX()
-	if fs:GetText() ~= text then fs:SetText(text) end
+	local sig = ItemsSig(items)
+	if sig ~= permSig then
+		SetContent(items)
+		permSig = sig
+	end
 	frame:SetAlpha(1)
 	if not frame:IsShown() then frame:Show() end
 	permShown = true
@@ -156,6 +212,7 @@ local function HidePermanent()
 		StopFX()
 		frame:Hide()
 		permShown = false
+		permSig = nil
 	end
 end
 
@@ -163,10 +220,11 @@ local function SetUnlocked(on)
 	unlocked = on and true or false
 	StopFX()
 	permShown = false
+	permSig = nil
 	frame:EnableMouse(unlocked)
 	if unlocked then
 		bg:Show()
-		fs:SetText("TrinketText \226\128\148 drag to move")
+		SetContent({ { text = "TrinketText \226\128\148 drag to move" } })
 		frame:SetAlpha(1)
 		frame:Show()
 		Print("frame |cff00ff00unlocked|r. Drag it, then |cffffff00/tt lock|r.")
@@ -180,27 +238,27 @@ end
 -- =========================================================================
 --  Cooldown tracking
 -- =========================================================================
--- Build the on-screen text for one or more ready trinkets. Each trinket gets
--- its own line, prefixed with its icon when /tt icon is on. Identical lines
--- collapse so a no-%s message with icons off shows only once.
-local function BuildText(itemIDs)
+-- One display row per ready trinket (max 2). Rows with identical text collapse
+-- so a no-%s message is not repeated; with %s each trinket keeps its own row
+-- and icon.
+local function BuildItems(itemIDs)
 	local msg = db.message
 	local named = msg:find("%%s") ~= nil
-	local seen, lines = {}, {}
+	local seen, items = {}, {}
 	for _, itemID in ipairs(itemIDs) do
-		local body = named and SafeFormat(msg, GetTrinketName(itemID)) or msg
-		local line = IconMarkup(itemID) .. body
-		if not seen[line] then
-			seen[line] = true
-			lines[#lines + 1] = line
+		local text = named and SafeFormat(msg, GetTrinketName(itemID)) or msg
+		if not seen[text] then
+			seen[text] = true
+			items[#items + 1] = { text = text, icon = GetTrinketIcon(itemID) }
+			if #items >= #rows then break end
 		end
 	end
-	return table.concat(lines, "\n")
+	return items
 end
 
 local function Announce(itemIDs)
 	if db.combatOnly and not InCombatLockdown() then return end
-	ShowMessage(BuildText(itemIDs))
+	ShowMessage(BuildItems(itemIDs))
 	if db.sound then
 		PlaySound(SOUNDKIT and SOUNDKIT.READY_CHECK or 8960, "Master")
 	end
@@ -309,7 +367,7 @@ local function CheckAll()
 	if db.permanent and not unlocked then
 		local allowed = not db.combatOnly or InCombatLockdown()
 		if #readyNow > 0 and allowed then
-			ShowPermanent(BuildText(readyNow))
+			ShowPermanent(BuildItems(readyNow))
 		else
 			HidePermanent()
 		end
@@ -394,14 +452,15 @@ SlashCmdList.TRINKETTEXT = function(input)
 		for _, slot in ipairs(TRINKET_SLOTS) do
 			ids[#ids + 1] = GetInventoryItemID("player", slot)
 		end
-		local sample
+		local items
 		if #ids > 0 then
-			sample = BuildText(ids)
+			items = BuildItems(ids)
 		else
-			sample = db.message:find("%%s")
+			local text = db.message:find("%%s")
 				and SafeFormat(db.message, "Test Trinket") or db.message
+			items = { { text = text } }
 		end
-		if db.permanent then ShowPermanent(sample) else ShowMessage(sample) end
+		if db.permanent then ShowPermanent(items) else ShowMessage(items) end
 
 	elseif cmd == "unlock" then
 		SetUnlocked(true)
