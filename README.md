@@ -5,7 +5,7 @@
 A lightweight World of Warcraft addon that shows a **changeable on‑screen message when an equipped trinket comes off cooldown**.
 
 - **Interface:** `120100` (WoW 12.1)
-- **Version:** 1.4.4
+- **Version:** 1.4.5
 - **Saved variables:** `TrinketTextDB` (account‑wide)
 - **Slash commands:** `/tt` or `/trinkettext`
 
@@ -50,8 +50,8 @@ When `%s` appears in the message it is replaced with the trinket's name. A messa
 no `%s` is shown verbatim. If both trinkets come off cooldown at the same time each one
 gets its own line (identical lines are collapsed).
 
-`/tt icon on` prefixes the message with the ready trinket's icon (the first one, when
-two are ready together). The icon scales with the font size.
+`/tt icon on` prefixes each line with that trinket's icon, so two trinkets popping
+together show two icons. The icon scales with the font size.
 
 ---
 
