@@ -63,14 +63,15 @@ local function GetTrinketIcon(itemID)
 end
 
 -- Inline icon for a trinket, sized to the current font so it sits on the text
--- line. Texel range 5..59 of 64 trims the stock icon border. Returns "" when
--- icons are off or no texture is available.
+-- line. Kept to the plain :h:w form -- the crop form needs the texture's real
+-- pixel size (256 on retail) or it scales the icon up several times over.
+-- Returns "" when icons are off or no texture is available.
 local function IconMarkup(itemID)
 	if not db.icon then return "" end
 	local tex = itemID and GetTrinketIcon(itemID)
 	if not tex then return "" end
-	local h = db.size
-	return ("|T%s:%d:%d:0:0:64:64:5:59:5:59|t "):format(tostring(tex), h, h)
+	local h = math.floor(db.size + 0.5)
+	return ("|T%s:%d:%d|t "):format(tostring(tex), h, h)
 end
 
 -- =========================================================================
