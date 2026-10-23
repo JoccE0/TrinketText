@@ -4,8 +4,8 @@
 
 A lightweight World of Warcraft addon that shows a **changeable on‑screen message when an equipped trinket comes off cooldown**.
 
-- **Interface:** `120100` (WoW 12.1)
-- **Version:** 1.4.5
+- **Interface:** `120105` (WoW 12.1.5)
+- **Version:** 1.4.6
 - **Saved variables:** `TrinketTextDB` (account‑wide)
 - **Slash commands:** `/tt` or `/trinkettext`
 

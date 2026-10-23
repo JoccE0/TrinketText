@@ -1,8 +1,8 @@
-## Interface: 120100
+## Interface: 120105
 ## Title: TrinketText
 ## Notes: Shows a changeable on-screen message when an equipped trinket comes off cooldown.
 ## Author: jocce
-## Version: 1.4.5
+## Version: 1.4.6
 ## SavedVariables: TrinketTextDB
 ## IconTexture: Interface\AddOns\TrinketText\icon
 
